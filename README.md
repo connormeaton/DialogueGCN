@@ -13,7 +13,7 @@ This repo contains an implementation of [DialogueGCN][1], a graph convolutional 
 - How should text-to-sequencing happen? Should hierarchical structure of conversations be preserved somehow? The structure text looks like this:
 
 
-		                |    corpus    |
+		                    |    corpus    |
                                /        |       \
                               c1       c2       c3
                             / | \     / | \    / | \
