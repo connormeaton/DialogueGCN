@@ -29,8 +29,21 @@ def get_train_valid_sampler(trainset, valid=0.1):
 
 
 def get_IEMOCAP_loaders(batch_size=32, valid=0.1, num_workers=0, pin_memory=False):
+
+    
     trainset = IEMOCAPDataset()
+    # n = []
+    # for i in trainset:
+    #     shape = i[0].shape[0]
+    #     rand_tensor = torch.rand((shape, 100))
+    #     cut = list(i[1:])
+    #     cut.insert(0, rand_tensor)
+    #     cut = tuple(cut)
+    #     n.append(cut)
+    # n = tuple(n)
+    # trainset = n
     train_sampler, valid_sampler = get_train_valid_sampler(trainset, valid)
+
 
     train_loader = DataLoader(trainset,
                               batch_size=batch_size,
@@ -53,6 +66,8 @@ def get_IEMOCAP_loaders(batch_size=32, valid=0.1, num_workers=0, pin_memory=Fals
                              num_workers=num_workers,
                              pin_memory=pin_memory)
 
+
+
     return train_loader, valid_loader, test_loader
 
 
@@ -68,12 +83,17 @@ def train_or_eval_model(model, loss_function, dataloader, epoch, optimizer=None,
         model.eval()
 
     seed_everything()
+    count=0
     for data in dataloader:
         if train:
             optimizer.zero_grad()
         # import ipdb;ipdb.set_trace()
-        textf, visuf, acouf, qmask, umask, label = [d.cuda() for d in data[:-1]] if cuda else data[:-1]
 
+        textf, visuf, acouf, qmask, umask, label = [d.cuda() for d in data[:-1]] if cuda else data[:-1]
+        # print(textf)
+        # print(textf.shape)
+        # print(len(textf))
+        count+=1
         max_sequence_len.append(textf.size(0))
     
         # log_prob, alpha, alpha_f, alpha_b = model(torch.cat((textf, acouf, visuf), dim=-1), qmask, umask)
@@ -99,7 +119,7 @@ def train_or_eval_model(model, loss_function, dataloader, epoch, optimizer=None,
             alphas_f += alpha_f
             alphas_b += alpha_b
             vids += data[-1]
-    
+  
     if preds!=[]:
         preds  = np.concatenate(preds)
         labels = np.concatenate(labels)
@@ -135,7 +155,7 @@ def train_or_eval_graph_model(model, loss_function, dataloader, epoch, cuda, opt
         if train:
             optimizer.zero_grad()
         textf, visuf, acouf, qmask, umask, label = [d.cuda() for d in data[:-1]] if cuda else data[:-1]
-
+  
         lengths = [(umask[j] == 1).nonzero().tolist()[-1][0] + 1 for j in range(len(umask))]
 
         log_prob, e_i, e_n, e_t, e_l = model(textf, qmask, umask, lengths)
@@ -347,6 +367,8 @@ if __name__ == '__main__':
             writer.add_scalar('test: accuracy/loss', test_acc/test_loss, e)
             writer.add_scalar('train: accuracy/loss', train_acc/train_loss, e)
 
+        from torchsummary import summary
+
         print('epoch: {}, train_loss: {}, train_acc: {}, train_fscore: {}, valid_loss: {}, valid_acc: {}, valid_fscore: {}, test_loss: {}, test_acc: {}, test_fscore: {}, time: {} sec'.\
                 format(e+1, train_loss, train_acc, train_fscore, valid_loss, valid_acc, valid_fscore, test_loss, test_acc, test_fscore, round(time.time()-start_time, 2)))
     
@@ -354,6 +376,7 @@ if __name__ == '__main__':
     if args.tensorboard:
         writer.close()
 
-    torch.save(model, 'saved_model.pt')
+    # torch.save(model, 'saved_model.pt')
     print('Test performance..')
     print ('F-Score:', max(all_fscore))
+    print(model)

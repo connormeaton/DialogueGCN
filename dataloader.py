@@ -17,21 +17,49 @@ class IEMOCAPDataset(Dataset):
         self.len = len(self.keys)
 
     def __getitem__(self, index):
+        '''
+        Inserting randomized tensor in place of OG textf of size (len_convo, 100)
+        and it works! 
+
+        Now go back to CNN and get output in shape (len_conv, 100)
+        '''
+
+
         vid = self.keys[index]
-        return torch.FloatTensor(self.videoText[vid]),\
-               torch.FloatTensor(self.videoVisual[vid]),\
-               torch.FloatTensor(self.videoAudio[vid]),\
-               torch.FloatTensor([[1,0] if x=='M' else [0,1] for x in\
-                                  self.videoSpeakers[vid]]),\
-               torch.FloatTensor([1]*len(self.videoLabels[vid])),\
-               torch.LongTensor(self.videoLabels[vid]),\
-               vid
+        # for i in self.videoText[vid]:
+        #     print(i)
+        conv_length = len(self.videoText[vid])
+        print(conv_length)
+      
+
+        # return torch.FloatTensor(self.videoText[vid]),\
+        #        torch.FloatTensor(self.videoVisual[vid]),\
+        #        torch.FloatTensor(self.videoAudio[vid]),\
+        #        torch.FloatTensor([[1,0] if x=='M' else [0,1] for x in\
+        #                           self.videoSpeakers[vid]]),\
+        #        torch.FloatTensor([1]*len(self.videoLabels[vid])),\
+        #        torch.LongTensor(self.videoLabels[vid]),\
+        #        vid
+
+        return torch.FloatTensor(torch.rand((conv_length, 100))),\
+                torch.FloatTensor(self.videoVisual[vid]),\
+                torch.FloatTensor(self.videoAudio[vid]),\
+                torch.FloatTensor([[1,0] if x=='M' else [0,1] for x in\
+                                    self.videoSpeakers[vid]]),\
+                torch.FloatTensor([1]*len(self.videoLabels[vid])),\
+                torch.LongTensor(self.videoLabels[vid]),\
+                vid
 
     def __len__(self):
         return self.len
 
     def collate_fn(self, data):
         dat = pd.DataFrame(data)
+
+        # dat = dat.drop(dat.columns[0], axis=1)
+
+
+
         return [pad_sequence(dat[i]) if i<4 else pad_sequence(dat[i], True) if i<6 else dat[i].tolist() for i in dat]
 
 
@@ -129,4 +157,5 @@ class DailyDialogueDataset(Dataset):
     
     def collate_fn(self, data):
         dat = pd.DataFrame(data)
+
         return [pad_sequence(dat[i]) if i<2 else pad_sequence(dat[i], True) if i<4 else dat[i].tolist() for i in dat]

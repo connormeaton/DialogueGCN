@@ -879,6 +879,8 @@ class DialogueGCNModel(nn.Module):
         """
         U -> seq_len, batch, D_m
         qmask -> seq_len, batch, party
+
+        This doesn't appear to be used...
         """
         if self.base_model == "DialogRNN":
 
