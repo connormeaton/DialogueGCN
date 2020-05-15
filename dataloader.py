@@ -1,20 +1,28 @@
 import torch
 from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_sequence
-import pickle, pandas as pd
+import pickle
+import pandas as pd
+import numpy as np
+import glob
 
 class IEMOCAPDataset(Dataset):
 
     def __init__(self, train=True):
-        self.videoIDs, self.videoSpeakers, self.videoLabels, self.videoText,\
-        self.videoAudio, self.videoVisual, self.videoSentence, self.trainVid,\
-        self.testVid = pickle.load(open('./IEMOCAP_features/IEMOCAP_features.pkl', 'rb'), encoding='latin1')
-        '''
-        label index mapping = {'hap':0, 'sad':1, 'neu':2, 'ang':3, 'exc':4, 'fru':5}
-        '''
-        self.keys = [x for x in (self.trainVid if train else self.testVid)]
+        # this is for IEMOCAP
+        # self.videoIDs, self.videoSpeakers, self.videoLabels, self.videoText,\
+        # self.videoAudio, self.videoVisual, self.videoSentence, self.trainVid,\
+        # self.testVid = pickle.load(open('./IEMOCAP_features/IEMOCAP_features.pkl', 'rb'), encoding='latin1')
+        # # '''
+        # # label index mapping = {'hap':0, 'sad':1, 'neu':2, 'ang':3, 'exc':4, 'fru':5}
+        # # '''
+        # self.keys = [x for x in (self.trainVid if train else self.testVid)]
+        # self.len = len(self.keys)
 
+        # this is for spaff
+        self.videoText, self.videoLabels, self.videoSpeakers, self.keys = pickle.load(open("SPAFF_features/spaff_features.pkl", "rb" ))
         self.len = len(self.keys)
+        
 
     def __getitem__(self, index):
         '''
@@ -22,16 +30,16 @@ class IEMOCAPDataset(Dataset):
         and it works! 
 
         Now go back to CNN and get output in shape (len_conv, 100)
+
+        CNN output successfully fit in
+        - update labels
+        qmask - 0,1 male or female
+        umask - list of 1's len labels
+        label - int label
         '''
-
-
         vid = self.keys[index]
-        # for i in self.videoText[vid]:
-        #     print(i)
-        conv_length = len(self.videoText[vid])
-        print(conv_length)
-      
-
+   
+        # this is for IEMOCAP
         # return torch.FloatTensor(self.videoText[vid]),\
         #        torch.FloatTensor(self.videoVisual[vid]),\
         #        torch.FloatTensor(self.videoAudio[vid]),\
@@ -41,14 +49,12 @@ class IEMOCAPDataset(Dataset):
         #        torch.LongTensor(self.videoLabels[vid]),\
         #        vid
 
-        return torch.FloatTensor(torch.rand((conv_length, 100))),\
-                torch.FloatTensor(self.videoVisual[vid]),\
-                torch.FloatTensor(self.videoAudio[vid]),\
-                torch.FloatTensor([[1,0] if x=='M' else [0,1] for x in\
-                                    self.videoSpeakers[vid]]),\
-                torch.FloatTensor([1]*len(self.videoLabels[vid])),\
-                torch.LongTensor(self.videoLabels[vid]),\
-                vid
+        # this is for SPAFF
+        return torch.FloatTensor(self.videoText[vid]),\
+            torch.FloatTensor(self.videoSpeakers[vid]), \
+            torch.FloatTensor([1]*len(self.videoLabels[vid])),\
+            torch.LongTensor(self.videoLabels[vid]),\
+            vid
 
     def __len__(self):
         return self.len
@@ -56,11 +62,10 @@ class IEMOCAPDataset(Dataset):
     def collate_fn(self, data):
         dat = pd.DataFrame(data)
 
-        # dat = dat.drop(dat.columns[0], axis=1)
-
-
-
-        return [pad_sequence(dat[i]) if i<4 else pad_sequence(dat[i], True) if i<6 else dat[i].tolist() for i in dat]
+        # IEMOCAP
+        # return [pad_sequence(dat[i]) if i<4 else pad_sequence(dat[i], True) if i<6 else dat[i].tolist() for i in dat]
+        # SPAFF
+        return [pad_sequence(dat[i]) if i<2 else pad_sequence(dat[i], True) if i<4 else dat[i].tolist() for i in dat]
 
 
 class AVECDataset(Dataset):
