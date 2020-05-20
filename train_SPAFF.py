@@ -362,7 +362,7 @@ if __name__ == '__main__':
     if args.tensorboard:
         writer.close()
 
-    # torch.save(model, 'saved_model.pt')
+    torch.save(model, 'SPAFF_saved_model.pt')
     print('Test performance..')
     print ('F-Score:', max(all_fscore))
     print(model)
